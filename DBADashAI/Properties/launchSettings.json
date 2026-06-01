@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "DBADashAI": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://*:5055"
+    }
+  }
+}

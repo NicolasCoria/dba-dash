@@ -116,6 +116,11 @@
     <Folder Include="Alert\Procedures" />
     <Folder Include="Alert\User Defined Types" />
     <Folder Include="Alert\Functions" />
+    <Folder Include="AI\" />
+    <Folder Include="AI\Stored Procedures\" />
+    <Folder Include="DBADash\Scripts\" />
+    <Folder Include="AI\Tables\" />
+    <Folder Include="Migration\" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="dbo\Tables\LogRestoreThresholds.sql" />
@@ -692,6 +697,35 @@
     <Build Include="dbo\Stored Procedures\Instance_ShowInSummary_Upd.sql" />
     <Build Include="dbo\Functions\TagValue.sql" />
     <Build Include="DBADash\Stored Procedures\User_Upd.sql" />
+    <Build Include="Security\AI.sql" />
+    <Build Include="AI\Tables\Models.sql" />
+    <Build Include="AI\Tables\ExampleQuestions.sql" />
+    <Build Include="AI\Stored Procedures\ActiveAlerts_Get.sql" />
+    <Build Include="AI\Stored Procedures\AgDrRisk_Get.sql" />
+    <Build Include="AI\Stored Procedures\AgentJobAlerts_Get.sql" />
+    <Build Include="AI\Stored Procedures\BackupsRisk_Get.sql" />
+    <Build Include="AI\Stored Procedures\Blocking_Get.sql" />
+    <Build Include="AI\Stored Procedures\CapacityForecast_Get.sql" />
+    <Build Include="AI\Stored Procedures\ConfigCurrent_Get.sql" />
+    <Build Include="AI\Stored Procedures\ConfigDrift_Get.sql" />
+    <Build Include="AI\Stored Procedures\ConfigRiskDrift_Get.sql" />
+    <Build Include="AI\Stored Procedures\CrossSignalCorrelation_Get.sql" />
+    <Build Include="AI\Stored Procedures\DBConfigCurrent_Get.sql" />
+    <Build Include="AI\Stored Procedures\Deadlocks_Get.sql" />
+    <Build Include="AI\Stored Procedures\DrivesRisk_Get.sql" />
+    <Build Include="AI\Stored Procedures\IdentityColumns_Get.sql" />
+    <Build Include="AI\Stored Procedures\InstanceMetadata_Get.sql" />
+    <Build Include="AI\Stored Procedures\OperationalHygiene_Get.sql" />
+    <Build Include="AI\Stored Procedures\OSPerformance_Get.sql" />
+    <Build Include="AI\Stored Procedures\ReliabilityRisk_Get.sql" />
+    <Build Include="AI\Stored Procedures\RunningQueries_Get.sql" />
+    <Build Include="AI\Stored Procedures\SlowQueries_Get.sql" />
+    <Build Include="AI\Stored Procedures\StorageSpace_Get.sql" />
+    <Build Include="AI\Stored Procedures\TableSize_Get.sql" />
+    <Build Include="AI\Stored Procedures\Waits_Get.sql" />
+    <Build Include="AI\Stored Procedures\WorkloadPressure_Get.sql" />
+    <Build Include="AI\Stored Procedures\ExampleQuestions_Get.sql" />
+    <Build Include="AI\Stored Procedures\Models_Get.sql" />
     <Build Include="dbo\Stored Procedures\JobTimeline_Get.sql" />
     <Build Include="dbo\Stored Procedures\JobCategories_Get.sql" />
     <Build Include="dbo\Stored Procedures\JobErrorAck.sql" />
@@ -823,6 +857,7 @@
     <Build Include="dbo\Stored Procedures\PurgeOfflineInstances.sql" />
     <Build Include="Alert\Procedures\OfflineAlert_Upd.sql" />
     <Build Include="Alert\Procedures\RestartAlert_Upd.sql" />
+    <Build Include="Alert\Procedures\BackupAlert_Upd.sql" />
     <Build Include="Alert\Procedures\DatabaseStatusAlert_Upd.sql" />
     <Build Include="dbo\Tables\RepositoryMetricsConfig.sql" />
     <Build Include="dbo\Stored Procedures\RepositoryMetricsConfig_Get.sql" />
@@ -889,6 +924,15 @@
     <Build Include="dbo\Stored Procedures\DatabaseExtendedProperties_Get.sql" />
     <Build Include="dbo\Stored Procedures\DatabaseExtendedPropertiesHistory_Get.sql" />
     <Build Include="Alert\Procedures\ActiveAlerts_FixIdentitySeed.sql" />
+    <None Include="DBADash\Scripts\AIExampleQuestions_Seed.sql" />
+    <Build Include="AI\Tables\ServiceConfig.sql" />
+    <Build Include="AI\Stored Procedures\ServiceConfig_Get.sql" />
+    <Build Include="AI\Stored Procedures\ServiceConfig_Upd.sql" />
+    <Build Include="AI\Stored Procedures\ServiceConfig_Heartbeat.sql" />
+    <Build Include="Security\AIService.sql" />
+    <Build Include="Security\AIUser.sql" />
+    <Build Include="Migration\DBFileSnapshot.sql" />
+    <Build Include="Security\Migration.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="Script.PostDeployment1.sql" />

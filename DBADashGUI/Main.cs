@@ -1,5 +1,6 @@
 ﻿using DBADash;
 using DBADash.Messaging;
+using DBADashGUI.AI;
 using DBADashGUI.AgentJobs;
 using DBADashGUI.Changes;
 using DBADashGUI.Checks;
@@ -38,6 +39,18 @@ namespace DBADashGUI
             public Tabs? Tab;
             public string Database;
             public bool SearchFromRoot = false;
+        }
+
+        private void RefreshAllowedTabsForCurrentNode()
+        {
+            if (suppressLoadTab || tv1.SelectedNode == null)
+            {
+                return;
+            }
+
+            var prevSelectedTab = tabs.SelectedTab;
+            var allowedTabs = GetAllowedTabs();
+            RefreshTabPages(allowedTabs, prevSelectedTab);
         }
 
         // Extracted helper to build the instance tree from instance/pool DataTables
@@ -215,7 +228,8 @@ namespace DBADashGUI
             TableSize,
             TuningRecommendations,
             PoolsAndGroups,
-            DatabaseExtendedProperties
+            DatabaseExtendedProperties,
+            AIAssistant
         }
 
         private static readonly List<Main.Tabs> InstanceOnlyTabs = new() { Main.Tabs.PerformanceSummary, Tabs.Metrics, Tabs.Waits, Tabs.Memory, Tabs.RunningQueries };
@@ -243,6 +257,8 @@ namespace DBADashGUI
         private TabPage tabPoolsAndGroups;
         private TabPage tabPerformance;
         private TabPage tabDatabaseExtendedProperties;
+        private TabPage tabAIAssistant;
+        private AIAssistantControl aiAssistantControl;
 
         public Main(CommandLineOptions opts)
         {
@@ -310,6 +326,9 @@ namespace DBADashGUI
                 PreventReportOverwrite = true
             };
             tabDatabaseExtendedProperties.Controls.Add(extPropView);
+            tabAIAssistant = new TabPage("AI Assistant") { Name = Tabs.AIAssistant.TabName() };
+            aiAssistantControl = new AIAssistantControl { Dock = DockStyle.Fill };
+            tabAIAssistant.Controls.Add(aiAssistantControl);
         }
 
         public TabPage GetCommunityToolsTabPage(ProcedureExecutionMessage.CommunityProcs proc)
@@ -433,7 +452,8 @@ namespace DBADashGUI
             diffSchemaSnapshot.Dock = DockStyle.Fill;
 
             LoadRepositoryConnections();
-            if (repositories.Count == 0) // We don't have a connection to the repository DB yet
+            if (repositories.Count == 0 // We don't have a connection to the repository DB yet
+                )
             {
                 if (File.Exists(Properties.Resources
                         .ServiceConfigToolName)) // The service configuration tool exists (Not the GUI only package).  Give user the option to configure the service or connect to an existing repository.
@@ -654,7 +674,7 @@ namespace DBADashGUI
                 {
                     // Marshal the UI updates to the UI thread using BeginInvoke so
                     // the background Task.Run does not directly access controls.
-                    this.BeginInvoke((Action)(() =>
+                    this.BeginInvoke((Action)(async () =>
                     {
                         // Re-validate that this delegate still belongs to the current connection attempt.
                         if (token != _setConnectionCts?.Token)
@@ -683,7 +703,16 @@ namespace DBADashGUI
                             var root = BuildInstanceTree(CommonData.Instances, poolsSnapshot, customReports, groupByTagLocal);
                             tv1.Nodes.Add(root);
                             root.Expand();
+
                             tv1.SelectedNode = root;
+
+                            // Discover AI service asynchronously - don't block UI loading.
+                            // Start after the initial root selection so the async completion
+                            // can reliably refresh the currently selected node's tabs.
+                            if (aiAssistantControl != null)
+                            {
+                                _ = RefreshAIAssistantAsync();
+                            }
 
                             AddTimeZoneMenus();
                             SetConnectionState(true);
@@ -740,6 +769,28 @@ namespace DBADashGUI
                 tv1.Nodes.Clear();
                 tabs.TabPages.Clear();
                 tabs.TabPages.Add(tabConnecting);
+            }
+        }
+
+        private async Task RefreshAIAssistantAsync()
+        {
+            try
+            {
+                await aiAssistantControl.RefreshConnectionAsync();
+                if (!IsDisposed)
+                {
+                    BeginInvoke((Action)(() =>
+                    {
+                        if (!IsDisposed)
+                        {
+                            RefreshAllowedTabsForCurrentNode();
+                        }
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AI refresh failed: {ex.Message}");
             }
         }
 
@@ -974,6 +1025,7 @@ namespace DBADashGUI
         {
             // Back-compat wrapper - calls the cache-aware implementation when
             // a cache is present.
+
             // Clear navigation history and rebuild the tree from live data
             VisitedNodes.Clear();
             tsBack.Enabled = false;
@@ -1356,6 +1408,14 @@ namespace DBADashGUI
                 || !n.Context.IsQueryTuningRecommendationsSupported())
             {
                 allowedTabs.Remove(tabTuningRecommendations);
+            }
+
+            // AI Assistant tab - show only at root level (no tree context is used)
+            if (n.Type is SQLTreeItem.TreeType.DBADashRoot 
+                && aiAssistantControl?.IsServiceAvailable == true
+                && (DBADashUser.IsAdmin || DBADashUser.IsInRole("AIUser")))
+            {
+                allowedTabs.Add(tabAIAssistant);
             }
 
             if (allowedTabs.Count == 0) // Display default tab if no tabs are applicable
@@ -1863,7 +1923,7 @@ namespace DBADashGUI
 
             if (e.InstanceID <= 0 && string.IsNullOrEmpty(e.Instance)) // No Instance - Use root Level
             {
-                nInstance = root.Type == SQLTreeItem.TreeType.DBAChecks ? root.Parent.AsSQLTreeItem() : root;
+                nInstance = root.Type == SQLTreeItem.TreeType.DBADashRoot ? root : root.Parent.AsSQLTreeItem();
             }
             else
             {
@@ -2240,6 +2300,7 @@ namespace DBADashGUI
 
                 VisitedNodes.Add(new TreeContext() { Node = node, TabIndex = TabIndex });
                 tsBack.Enabled = VisitedNodes.Count > 0;
+                suppressSaveContext = true;
             }
         }
 
@@ -2835,7 +2896,8 @@ namespace DBADashGUI
         {
             var fontSize = currentValue.ToString();
 
-            if (CommonShared.ShowInputDialog(ref fontSize, $"Chart {settingName} font size (6-24 or blank for default:{defaultValue})") != DialogResult.OK)
+            if (CommonShared.ShowInputDialog(ref fontSize, $"Chart {settingName} font size (6-24 or blank for default:{defaultValue})") !=
+                DialogResult.OK)
                 return;
 
             // Handle empty string as reset to default (-1 means use default constant)
@@ -2900,7 +2962,6 @@ namespace DBADashGUI
                 }
             }
         }
-
         void IThemedControl.ApplyTheme(BaseTheme theme)
         {
             Controls.ApplyTheme(theme);
